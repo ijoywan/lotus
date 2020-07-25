@@ -445,7 +445,7 @@ func ComputeState(ctx context.Context, sm *StateManager, height abi.ChainEpoch, 
 	}
 
 	r := store.NewChainRand(sm.cs, ts.Cids(), height)
-	vmi, err := vm.NewVM(fstate, height, r, sm.cs.Blockstore(), sm.cs.VMSys())
+	vmi, err := vm.NewVM(fstate, height, r, sm.cs.Blockstore(), sm.cs.VMSys(), sm.GetVestedFunds)
 	if err != nil {
 		return cid.Undef, nil, err
 	}
@@ -584,7 +584,7 @@ func (sm *StateManager) CirculatingSupply(ctx context.Context, ts *types.TipSet)
 	}
 
 	r := store.NewChainRand(sm.cs, ts.Cids(), ts.Height())
-	vmi, err := vm.NewVM(st, ts.Height(), r, sm.cs.Blockstore(), sm.cs.VMSys())
+	vmi, err := vm.NewVM(st, ts.Height(), r, sm.cs.Blockstore(), sm.cs.VMSys(), sm.GetVestedFunds)
 	if err != nil {
 		return big.Zero(), err
 	}
