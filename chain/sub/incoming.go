@@ -203,6 +203,31 @@ func (bv *BlockValidator) Validate(ctx context.Context, pid peer.ID, msg *pubsub
 		}
 	}
 
+	// we check that the miner met the minimum power at the lookback tipset
+
+	baseTs, err := bv.stmgr.ChainStore().LoadTipSet(types.NewTipSetKey(blk.Header.Parents...))
+	if err != nil {
+		log.Warnf("failed to load parent tipset of incoming block")
+		return pubsub.ValidationReject
+	}
+
+	lbts, err := stmgr.GetLookbackTipSetForRound(ctx, bv.stmgr, baseTs, blk.Header.Height)
+	if err != nil {
+		log.Warnf("failed to load lookback tipset for incoming block")
+		return pubsub.ValidationIgnore
+	}
+
+	hmp, err := stmgr.MinerHasMinPower(ctx, bv.stmgr, blk.Header.Miner, lbts)
+	if err != nil {
+		log.Warnf("failed to determine if incoming block's miner has minimum power")
+		return pubsub.ValidationIgnore
+	}
+
+	if !hmp {
+		log.Warnf("incoming block's miner does not have minimum power")
+		return pubsub.ValidationReject
+	}
+
 	err = sigs.CheckBlockSignature(ctx, blk.Header, key)
 	if err != nil {
 		log.Errorf("block signature verification failed: %s", err)
